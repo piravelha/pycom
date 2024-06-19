@@ -55,7 +55,7 @@ class Parser:
         if isinstance(result, ParseError):
             return result.format()
         if result.rest:
-            return f"{result.rest[0].location} SYNTAX ERROR: Expected EOF, but got '{result.rest[0]}'"
+            return f"{result.rest[0].location} SYNTAX ERROR: Expected EOF, but got '{result.rest[0].value}'"
         return "No Errors Found (parse.py)"
     def parse(self, tokens: list[Token]) -> Tree:
         result = self.raw_parse(tokens)
@@ -63,7 +63,7 @@ class Parser:
             print(result.format())
             exit(1)
         if result.rest:
-            print(f"{result.rest[0].location} SYNTAX ERROR: Expected EOF, but got '{result.rest[0]}'")
+            print(f"{result.rest[0].location} SYNTAX ERROR: Expected EOF, but got '{result.rest[0].value}'")
             exit(1)
         return result
 

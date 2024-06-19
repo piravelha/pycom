@@ -94,7 +94,7 @@ def transform(tree: Tree):
         ),
     )
 
-def compile(file: str, text: str, out_path: str = "out.c"):
+def compile(file: str, text: str, out_path: str = "build/out.c"):
     global stack_top, initialized_env
     stack_top = 0
     initialized_env = {}

@@ -191,5 +191,5 @@ if __name__ == "__main__":
     tokens = lexer.lex("<stdin>", text)
     tree = start_parser.parse(tokens)
     tree = transformer.transform(tree, start=True)
-    with open("out.c", "w") as f:
+    with open("build/out.c", "w") as f:
       f.write(generate_c(tree))

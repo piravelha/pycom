@@ -1,4 +1,4 @@
-from parse import Tree
+from src.parse import Tree
 
 var_counter = 0
 def new_var():
