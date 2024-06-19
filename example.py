@@ -9,6 +9,7 @@ lexer = Lexer()
 
 lexer.add_token("+")
 lexer.add_token("-")
+lexer.add_token("!")
 lexer.add_token("*")
 lexer.add_token("=")
 lexer.add_token("(")
@@ -61,11 +62,23 @@ minus_parser = Parser(lambda: inline_alt(
 
 mult_parser = Parser(lambda: inline_alt(
     seq("Mult",
-        [atom_parser],
+        [unary_parser],
         "*",
-        [atom_parser],
+        [unary_parser],
     ),
-    atom_parser,
+    unary_parser,
+))
+
+unary_parser = Parser(lambda: inline_alt(
+  seq("Unary",
+    [inline_alt(
+      "+",
+      "-",
+      "!",
+    )],
+    [atom_parser],
+  ),
+  atom_parser,
 ))
 
 atom_parser = Parser(lambda: inline_alt(
@@ -97,48 +110,64 @@ def transform_identifier(i):
 def transform_call(f, x):
     x = transformer.transform(x)
     if f.nodes[0] == "print":
-        return C.Call(C.Identifier("printf"), C.StringLiteral(r"%d\n"), x)
+        return C.Call(
+            C.Identifier("printf"),
+            C.StringLiteral(r"%d\n"),
+            x
+        )
     f = transformer.transform(f)
     return C.Call(f, x)
+
+@transformer.new_rule("Unary")
+def transform_unary(op, r):
+  r = transformer.transform(r)
+  return C.UnaryOperator(op.nodes[0], r)
 
 @transformer.new_rule("Mult")
 def transform_mult(l, r):
     l = transformer.transform(l)
     r = transformer.transform(r)
-    return C.BinaryOp(l, "*", r)
+    return C.BinaryOperator(l, "*", r)
 
 @transformer.new_rule("Minus")
 def transform_plus(l, r):
     l = transformer.transform(l)
     r = transformer.transform(r)
-    return C.BinaryOp(l, "-", r)
+    return C.BinaryOperator(l, "-", r)
 
 @transformer.new_rule("Plus")
 def transform_plus(l, r):
     l = transformer.transform(l)
     r = transformer.transform(r)
-    return C.BinaryOp(l, "+", r)
+    return C.BinaryOperator(l, "+", r)
 
 @transformer.new_rule("Func")
 def transform_func(n, p, b):
     n = transformer.transform(n)
     p = transformer.transform(p)
     b = transformer.transform(b)
-    return C.Function(C.Type("int"), n, [(C.Type("int"), p)], C.Block(
+    return C.FunctionDeclaration(
+      C.Type("int"),
+      n,
+      C.ParameterList(
+        C.Parameter(C.Type("int"), p),
+      ),
+      C.Block(
         C.Return(b)
-    ))
+      )
+    )
 
 @transformer.new_rule("Funcs")
 def transform_func(*funcs):
-    return C.Block(*[transformer.transform(f) for f in funcs])
+    return C.DeclarationList(*[transformer.transform(f) for f in funcs])
 
 @transformer.new_rule("Start")
 def transform_start(funcs, body):
     funcs = transformer.transform(funcs)
     body = transformer.transform(body)
-    return C.Block(
+    return C.DeclarationList(
         funcs,
-        C.Function(C.Type("int"), C.Identifier("main"), [], C.Block(
+        C.FunctionDeclaration(C.Type("int"), C.Identifier("main"), C.ParameterList(), C.Block(
             C.Statement(body),
             C.Return(C.IntLiteral("0")),
         ))
@@ -148,7 +177,7 @@ def transform_start(funcs, body):
 def transform_start_(tree):
     tree = transformer.transform(tree)
     return C.Program(
-        [C.IncludeStd("stdio.h")],
+        C.Include("stdio.h"),
         tree,
     )
 
@@ -156,10 +185,11 @@ def transform_start_(tree):
 
 if __name__ == "__main__":
     text = """
-        fn negate(x) = 0 - x;
-        print(negate(2))
+        fn negate(x) = -x;
+        print(500 + negate(80))
     """
     tokens = lexer.lex("<stdin>", text)
     tree = start_parser.parse(tokens)
     tree = transformer.transform(tree, start=True)
-    print(generate_c(tree))
+    with open("out.c", "w") as f:
+      f.write(generate_c(tree))

@@ -1,9 +1,8 @@
 #include <stdio.h>
 
-int v0(int v1) {
-    return (0 - v1);
-}
 int main() {
-    printf("%d\n", v0(2));
-    return 0;
+    int s0_0 = 1;
+    int s0_1 = 2;
+    int s1_0 = (s0_0 + s0_1);
+    printf("%d\n", s0_0);
 }

@@ -18,3 +18,5 @@ class Transformer:
         if not self.rules.get(tree.type):
             return tree
         return self.rules[tree.type](*[n for n in tree.nodes])
+    def start(self, tree):
+        return self.transform(tree, True)

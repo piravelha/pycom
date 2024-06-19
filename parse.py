@@ -40,7 +40,7 @@ class ParseError:
         return message
 
 class Tree:
-    def __init__(self, type, nodes, location, rest):
+    def __init__(self, type, nodes, location=Location("?", -1, -1), rest=[]):
         self.type = type
         self.nodes = nodes
         self.location = location
@@ -49,48 +49,78 @@ class Tree:
         nodes = ", ".join([str(n) for n in self.nodes])
         return f"{self.type}({nodes})"
     
-_default_parser_config = [Location("?", -1, -1), []]
-
 class C:
     @staticmethod
     def IntLiteral(value):
-        return Tree("C_IntLiteral", [value], *_default_parser_config)
+        return Tree("C_IntLiteral", [value])
+    @staticmethod
+    def CharLiteral(value):
+        return Tree("C_CharLiteral", [value])
     @staticmethod
     def StringLiteral(value):
-        return Tree("C_StringLiteral", [value], *_default_parser_config)
+        return Tree("C_StringLiteral", [value])
     @staticmethod
     def Identifier(value):
-        return Tree("C_Identifier", [value], *_default_parser_config)
+        return Tree("C_Identifier", [value])
     @staticmethod
     def Variable(value):
-        return Tree("C_Variable", [value], *_default_parser_config)
+        return Tree("C_Variable", [value])
     @staticmethod
-    def BinaryOp(left, op, right):
-        return Tree("C_BinaryOp", [left, op, right], *_default_parser_config)
+    def ArgumentList(*args):
+      return Tree("C_ArgumentList", args)
     @staticmethod
     def Call(func, *values):
-        return Tree("C_Call", [func, *values], *_default_parser_config)
+        return Tree("C_Call", [func, *values])
+    @staticmethod
+    def UnaryOperator(op, value):
+      return Tree("C_UnaryOperator", [op, value])
+    @staticmethod
+    def BinaryOperator(left, op, right):
+        return Tree("C_BinaryOperator", [left, op, right])
     @staticmethod
     def Statement(expr):
-        return Tree("C_Statement", [expr], *_default_parser_config)
+        return Tree("C_Statement", [expr])
     @staticmethod
     def Return(value):
-        return Tree("C_Return", [value], *_default_parser_config)
+        return Tree("C_Return", [value])
     @staticmethod
+    def While(cond, body):
+        return Tree("C_While", [cond, body])
+    @staticmethod
+    def If(cond, body):
+        return Tree("C_If", [cond, body])
+    @staticmethod
+    def IfElse(cond, body, elbody):
+        return Tree("C_IfElse", [cond, body, elbody])
+    @staticmethod
+    def StatementList(*statements):
+        return Tree("C_StatementList", statements)
     def Block(*statements):
-        return Tree("C_Block", statements, *_default_parser_config)
+      return Tree("C_Block", statements)
+    @staticmethod
+    def Parameter(type, name):
+        return Tree("C_Parameter", [type, name])
+    @staticmethod
+    def ParameterList(*params):
+        return Tree("C_ParameterList", params)
+    @staticmethod
+    def VariableDeclaration(type, name, value):
+        return Tree("C_VariableDeclaration", [type, name, value])
     @staticmethod
     def Type(value):
-        return Tree("C_Type", [value], *_default_parser_config)
+        return Tree("C_Type", [value])
     @staticmethod
-    def Function(ret, name, params, body):
-        return Tree("C_Function", [ret, name, params, body], *_default_parser_config)
+    def FunctionDeclaration(ret, name, params, body):
+        return Tree("C_FunctionDeclaration", [ret, name, params, body])
     @staticmethod
-    def IncludeStd(file):
-        return Tree("C_IncludeStd", [file], *_default_parser_config)
+    def Include(file):
+        return Tree("C_Include", [file])
     @staticmethod
-    def Program(macros, body):
-        return Tree("C_Program", [macros, body], *_default_parser_config)
+    def DeclarationList(*decls):
+        return Tree("C_DeclarationList", decls)
+    @staticmethod
+    def Program(*declarations):
+        return Tree("C_Program", declarations)
 
 def token(name: str):
     def parse(tokens):
