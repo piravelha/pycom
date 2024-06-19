@@ -1,5 +1,4 @@
 from parse import Tree
-import re
 
 var_counter = 0
 def new_var():
@@ -8,10 +7,10 @@ def new_var():
     var_counter += 1
     return var
 
-def get_indents_c(code: str):
+def get_indents_c(code: str) -> list[int]:
     lines = code.splitlines()
     indent = 0
-    indent_guides = []
+    indent_guides: list[int] = []
     for line in lines:
         if line.count("}"):
             indent -= line.count("}")
@@ -20,7 +19,7 @@ def get_indents_c(code: str):
             indent += line.count("{")
     return indent_guides
 
-def generate_c(tree, env={}, obsfuscate_strings=False):
+def generate_c(tree: Tree, env: dict[str, str] = {}) -> str:
     if tree.type == "C_IntLiteral":
         return str(tree.nodes[0])
     if tree.type == "C_CharLiteral":
@@ -87,6 +86,11 @@ def generate_c(tree, env={}, obsfuscate_strings=False):
       name = generate_c(name)
       value = generate_c(value)
       return f"{type} {name} = {value};\n"
+    if tree.type == "C_Assignment":
+      name, value = tree.nodes
+      name = generate_c(name)
+      value = generate_c(value)
+      return f"{name} = {value};\n"
     if tree.type == "C_FunctionDeclaration":
         ret, name, params, body = tree.nodes
         ret = generate_c(ret)

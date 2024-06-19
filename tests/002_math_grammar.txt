@@ -1,0 +1,1 @@
+[[(], [INT:1], [OPERATOR:+], [INT:3], [(], [INT:2], [OPERATOR:/], [INT:4], [)], [OPERATOR:^], [INT:2], [)], [OPERATOR:/], [INT:10]]

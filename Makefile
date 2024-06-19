@@ -4,14 +4,14 @@ all: example
 .PHONY: example
 example:
 		python example.py
-			gcc -o out out.c
-				./out
+		gcc -o out out.c
+		./out
 
 .PHONY: stack_based
 stack_based:
-	python3 stack_based.py
-	gcc -o out out.c
-	./out
+	python stack_based.py
+	gcc -o out.exe out.c
+	./out.exe
 
 .PHONY: build
 build:

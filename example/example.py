@@ -1,7 +1,7 @@
-from lex import Lexer
-from parse import Parser, inline_alt, seq, many, C
-from transform import Transformer
-from codegen import generate_c
+from src.lex import Lexer
+from src.parse import Parser, alt, seq, many, Tree, C
+from src.transform import Transformer
+from src.codegen import generate_c
 
 # Lexing
 
@@ -38,11 +38,11 @@ func_parser = Parser(lambda: seq("Func",
     ";"
 ))
 
-expr_parser = Parser(lambda: inline_alt(
+expr_parser = Parser(lambda: alt(
     plus_parser,
 ))
 
-plus_parser = Parser(lambda: inline_alt(
+plus_parser = Parser(lambda: alt(
     seq("Plus",
         [minus_parser],
         "+",
@@ -51,7 +51,7 @@ plus_parser = Parser(lambda: inline_alt(
     minus_parser,
 ))
 
-minus_parser = Parser(lambda: inline_alt(
+minus_parser = Parser(lambda: alt(
     seq("Minus",
         [mult_parser],
         "-",
@@ -60,7 +60,7 @@ minus_parser = Parser(lambda: inline_alt(
     mult_parser,
 ))
 
-mult_parser = Parser(lambda: inline_alt(
+mult_parser = Parser(lambda: alt(
     seq("Mult",
         [unary_parser],
         "*",
@@ -69,9 +69,9 @@ mult_parser = Parser(lambda: inline_alt(
     unary_parser,
 ))
 
-unary_parser = Parser(lambda: inline_alt(
+unary_parser = Parser(lambda: alt(
   seq("Unary",
-    [inline_alt(
+    [alt(
       "+",
       "-",
       "!",
@@ -81,7 +81,7 @@ unary_parser = Parser(lambda: inline_alt(
   atom_parser,
 ))
 
-atom_parser = Parser(lambda: inline_alt(
+atom_parser = Parser(lambda: alt(
     call_parser,
     "IDENTIFIER",
     "INT",
@@ -99,50 +99,50 @@ call_parser = Parser(lambda: seq("Call",
 transformer = Transformer()
 
 @transformer.new_rule("INT")
-def transform_int(n):
+def transform_int(n: str):
    return C.IntLiteral(n)
 
 @transformer.new_rule("IDENTIFIER")
-def transform_identifier(i):
+def transform_identifier(i: str):
     return C.Variable(i)
 
 @transformer.new_rule("Call")
-def transform_call(f, x):
+def transform_call(f: Tree, x: Tree):
     x = transformer.transform(x)
     if f.nodes[0] == "print":
         return C.Call(
             C.Identifier("printf"),
             C.StringLiteral(r"%d\n"),
-            x
+            x,
         )
     f = transformer.transform(f)
     return C.Call(f, x)
 
 @transformer.new_rule("Unary")
-def transform_unary(op, r):
+def transform_unary(op: Tree, r: Tree):
   r = transformer.transform(r)
   return C.UnaryOperator(op.nodes[0], r)
 
 @transformer.new_rule("Mult")
-def transform_mult(l, r):
+def transform_mult(l: Tree, r: Tree):
     l = transformer.transform(l)
     r = transformer.transform(r)
     return C.BinaryOperator(l, "*", r)
 
 @transformer.new_rule("Minus")
-def transform_plus(l, r):
+def transform_minus(l: Tree, r: Tree):
     l = transformer.transform(l)
     r = transformer.transform(r)
     return C.BinaryOperator(l, "-", r)
 
 @transformer.new_rule("Plus")
-def transform_plus(l, r):
+def transform_plus(l: Tree, r: Tree):
     l = transformer.transform(l)
     r = transformer.transform(r)
     return C.BinaryOperator(l, "+", r)
 
 @transformer.new_rule("Func")
-def transform_func(n, p, b):
+def transform_func(n: Tree, p: Tree, b: Tree):
     n = transformer.transform(n)
     p = transformer.transform(p)
     b = transformer.transform(b)
@@ -158,11 +158,11 @@ def transform_func(n, p, b):
     )
 
 @transformer.new_rule("Funcs")
-def transform_func(*funcs):
+def transform_funcs(*funcs: Tree):
     return C.DeclarationList(*[transformer.transform(f) for f in funcs])
 
 @transformer.new_rule("Start")
-def transform_start(funcs, body):
+def transform_start(funcs: Tree, body: Tree):
     funcs = transformer.transform(funcs)
     body = transformer.transform(body)
     return C.DeclarationList(
@@ -174,7 +174,7 @@ def transform_start(funcs, body):
     )
 
 @transformer.new_rule("#Start")
-def transform_start_(tree):
+def transform_start_(tree: Tree):
     tree = transformer.transform(tree)
     return C.Program(
         C.Include("stdio.h"),
